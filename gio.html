@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dino-Dodger 2D Arcade - Mobile</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            margin: 0;
+            padding: 10px;
+            text-align: center;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        nav {
+            background-color: #2e5a27;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        nav a {
+            color: white;
+            margin: 0 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        h1 { font-size: 1.4rem; margin: 5px 0; }
+        p { font-size: 0.85rem; margin: 5px 0; color: #bbb; }
+        canvas {
+            background-color: #2c3e50;
+            border: 3px solid #2e5a27;
+            border-radius: 8px;
+            display: block;
+            margin: 10px auto;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            max-width: 100%;
+            height: auto;
+            touch-action: none;
+        }
+        .stats-panel {
+            display: flex;
+            justify-content: space-around;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #score { color: #f1c40f; }
+        #livelloText { color: #5cb85c; }
+        #highScore { color: #e74c3c; }
+        .btn-restart {
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            margin: 10px auto;
+            width: 80%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html">← Home</a>
+        <a href="scavo.html">Scavo</a>
+        <a href="sopravvivenza.html">Survival</a>
+    </nav>
+
+    <div class="container">
+        <h1>Rex-Dodger: Pioggia Estrema 🌋</h1>
+        <p>Trascina il dito sullo schermo per muovere il T-Rex ed evitare le meteore!</p>
+        
+        <div class="stats-panel">
+            <div>🥚 Uova: <span id="score">0</span></div>
+            <div>🔥 Pericolo: <span id="livelloText">1</span></div>
+            <div>🏆 Record: <span id="highScore">0</span></div>
+        </div>
+        
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        
+        <button class="btn-restart" id="restartBtn" onclick="resetGioco()">Gioca Ancora 🔄</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreSpan = document.getElementById("score");
+        const highScoreSpan = document.getElementById("highScore");
+        const livelloSpan = document.getElementById("livelloText");
+        const restartBtn = document.getElementById("restartBtn");
+
+        let player = { x: 280, y: 300, width: 36, height: 36, speed: 6, emoji: "🦖" };
+        let uovo = { x: 0, y: 0, size: 28, emoji: "🥚" };
+        let meteoriti = [];
+        let score = 0;
+        let gameOver = false;
+        let keys = {};
+
+        let tempoDiGioco = 0;
+        let livelloDifficolta = 1;
+        let velocitaBaseMeteoriti = 2; 
+        let frequenzaGenerazione = 1000; 
+        let meteoriteTimer = null;
+        let difficoltaInterval = null;
+
+        window.addEventListener("keydown", (e) => { 
+            keys[e.key.toLowerCase()] = true; 
+            if(["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(e.key.toLowerCase())) e.preventDefault();
+        });
+        window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+
+        function muoviConTouch(e) {
+            if (gameOver) return;
+            if (e.touches && e.touches.length > 0) {
+                const rect = canvas.getBoundingClientRect();
+                const touchX = e.touches[0].clientX - rect.left;
+                const touchY = e.touches[0].clientY - rect.top;
+                const scalaX = canvas.width / rect.width;
+                const scalaY = canvas.height / rect.height;
+
+                player.x = (touchX * scalaX) - (player.width / 2);
+                player.y = (touchY * scalaY) - (player.height / 2) - 40;
+            }
+        }
+
+        window.addEventListener('touchstart', (e) => {
+            if (!gameOver && e.target === canvas) { muoviConTouch(e); }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) { e.preventDefault(); muoviConTouch(e); }
+        }, { passive: false });
+
+        window.onload = function() {
+            let recordSalvato = localStorage.getItem('dinoArcadeRecord') || 0;
+            highScoreSpan.innerText = recordSalvato;
+            piazzaUovo();
+            avviaCicliDifficolta();
+            gameLoop();
+        };
+
+        function piazzaUovo() {
+            uovo.x = Math.random() * (canvas.width - uovo.size);
+            uovo.y = Math.random() * (canvas.height - uovo.size - 40) + 20;
+        }
+
+        function pianificaMeteorite() {
+            if (gameOver) return;
+            meteoriti.push({
+                x: Math.random() * (canvas.width - 30),
+                y: -30,
+                size: Math.random() * 20 + 20,
+                speed: Math.random() * 3 + velocitaBaseMeteoriti + (livelloDifficolta * 0.7),
+                emoji: "☄️"
+            });
+            meteoriteTimer = setTimeout(pianificaMeteorite, frequenzaGenerazione);
+        }
+
+        function avviaCicliDifficolta() {
+            pianificaMeteorite();
+            difficoltaInterval = setInterval(() => {
+                if (gameOver) return;
+                tempoDiGioco += 10;
+                livelloDifficolta++;
+                livelloSpan.innerText = livelloDifficolta;
+                frequenzaGenerazione = Math.max(250, 1000 - (livelloDifficolta * 120));
+                velocitaBaseMeteoriti += 0.5;
+            }, 10000); 
+        }
+        function update() {
+            if (gameOver) return;
+
+            if (keys["w"] || keys["arrowup"]) player.y -= player.speed;
+            if (keys["s"] || keys["arrowdown"]) player.y += player.speed;
+            if (keys["a"] || keys["arrowleft"]) player.x -= player.speed;
+            if (keys["d"] || keys["arrowright"]) player.x += player.speed;
+
+            if (player.x < 0) player.x = 0;
+            if (player.y < 0) player.y = 0;
+            if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+            if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
+
+            if (player.x < uovo.x + uovo.size &&
+                player.x + player.width > uovo.x &&
+                player.y < uovo.y + uovo.size &&
+                player.y + player.height > uovo.y) {
+                score++;
+                scoreSpan.innerText = score;
+                piazzaUovo();
+            }
+
+            for (let i = 0; i < meteoriti.length; i++) {
+                let m = meteoriti[i];
+                m.y += m.speed;
+
+                if (player.x < m.x + m.size &&
+                    player.x + player.width > m.x &&
+                    player.y < m.y + m.size &&
+                    player.y + player.height > m.y) {
+                    attivaGameOver();
+                    break;
+                }
+            }
+            meteoriti = meteoriti.filter(m => m.y < canvas.height);
+        }
+
+        function attivaGameOver() {
+            gameOver = true;
+            meteoriti = []; 
+            restartBtn.style.display = "block";
+            clearTimeout(meteoriteTimer);
+            clearInterval(difficoltaInterval);
+
+            let recordAttuale = parseInt(localStorage.getItem('dinoArcadeRecord')) || 0;
+            if (score > recordAttuale) {
+                localStorage.setItem('dinoArcadeRecord', score);
+                highScoreSpan.innerText = score;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+
+            ctx.font = player.width + "px Arial";
+            ctx.textBaseline = "top";
+            ctx.textAlign = "left";
+            ctx.fillText(player.emoji, player.x, player.y);
+
+            ctx.font = uovo.size + "px Arial";
+            ctx.fillText(uovo.emoji, uovo.x, uovo.y);
+
+            if (!gameOver) {
+                meteoriti.forEach(m => {
+                    ctx.font = m.size + "px Arial";
+                    ctx.fillText(m.emoji, m.x, m.y);
+                });
+            }
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0,0,0,0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#c0392b";
+                ctx.font = "bold 32px Segoe UI";
+                ctx.textAlign = "center";
+                ctx.fillText("💥 ESTINZIONE DI MASSA 💥", canvas.width / 2, canvas.height / 2 - 25);
+                ctx.fillStyle = "white";
+                ctx.font = "18px Segoe UI";
+                ctx.fillText("Livello raggiunto: " + livelloDifficolta, canvas.width / 2, canvas.height / 2 + 15);
+                ctx.fillText("Uova totali salvate: " + score, canvas.width / 2, canvas.height / 2 + 45);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resetGioco() {
+            player.x = 280; player.y = 300;
+            meteoriti = []; score = 0; tempoDiGioco = 0;
+            livelloDifficolta = 1; velocitaBaseMeteoriti = 2; frequenzaGenerazione = 1000;
+            scoreSpan.innerText = score; livelloSpan.innerText = livelloDifficolta;
+            gameOver = false; restartBtn.style.display = "none";
+            piazzaUovo();
+            clearTimeout(meteoriteTimer); clearInterval(difficoltaInterval);
+            avviaCicliDifficolta();
+        }
+    </script>
+</body>
+</html>```

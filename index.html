@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sito Moderno con Link esterni</title>
+    <style>
+        /* Reset e Variabili Globali */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Struttura Principale */
+        .container {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #38bdf8, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        /* Griglia dei tre Paragrafi Cliccabili */
+        .grid-links {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        /* Stile del singolo blocco trasformatore in link */
+        .card-link {
+            background-color: var(--card-bg);
+            border: 2px solid transparent;
+            padding: 30px 20px;
+            border-radius: 16px;
+            text-decoration: none; /* Rimuove la sottolineatura del link */
+            color: var(--text-main);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        /* Effetti al passaggio del mouse (Hover) */
+        .card-link:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-color);
+            box-shadow: 0 20px 25px -5px rgba(56, 189, 248, 0.15);
+        }
+
+        .card-link h3 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-link p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+
+        /* Piccolo indicatore visivo in fondo alla card */
+        .card-footer {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Responsive per smartphone */
+        @media (max-width: 768px) {
+            .grid-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Sito Web Interattivo</h1>
+            <p>Clicca su uno dei blocchi per aprire l'approfondimento in una nuova scheda.</p>
+        </header>
+
+        <!-- Sezione contenente i 3 paragrafi/link -->
+        <main class="grid-links">
+            
+            <!-- BLOCCO 1 (Modifica l'attributo href con il sito che preferisci) -->
+            <a href="platform.html" target="_blank" class="card-link">
+                <div>
+                    <h3>🚀 Astronavi</h3>
+                    <p>Questo paragrafo è interamente cliccabile. Se premi qui, verrai reindirizzato al motore di ricerca più famoso del mondo direttamente in un altro pannello del browser.</p>
+                </div>
+                <div class="card-footer">Apri link ↗</div>
+            </a>
+
+            <!-- BLOCCO 2 -->
+            <a href="gio.html" target="_blank" class="card-link">
+                <div>
+                    <h3>📚 Wikipedia</h3>
+                    <p>Cliccando su questo secondo blocco, il sistema sfrutta il comando HTML nativo per lanciare l'enciclopedia libera mantenendo comunque questa pagina web aperta sotto.</p>
+                </div>
+                <div class="card-footer">Apri link ↗</div>
+            </a>
+
+            <!-- BLOCCO 3 -->
+            <a href="comb.html" target="_blank" class="card-link">
+                <div>
+                    <h3>Combattimento</h3>
+                    <p>Il terzo paragrafo è dedicato agli sviluppatori. Un design pulito ed effetti di sollevamento fluidi indicano chiaramente all'utente che l'elemento è interattivo.</p>
+                </div>
+                <div class="card-footer">Apri link ↗</div>
+            </a>
+
+        </main>
+    </div>
+
+</body>
+</html>
